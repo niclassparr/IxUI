@@ -17,7 +17,9 @@ from backend.models import (
     Interface,
     IpMac,
     IpStatus,
+    Media,
     NameValue,
+    Package,
     Response,
     Route,
     Service,
@@ -162,6 +164,49 @@ _NETWORK_HOSTS: list[IpMac] = [
     IpMac(ip="192.168.1.102", mac="00:1A:2B:3C:4D:60"),
 ]
 
+_PACKAGES: list[Package] = [
+    Package(name="ixui-core", version="3.2.1", installed=True),
+    Package(name="ixui-hls-plugin", version="1.4.0", installed=True),
+    Package(name="ixui-cloud-agent", version="2.0.3", installed=False),
+    Package(name="ixui-epg-grabber", version="1.1.0", installed=False),
+]
+
+_MEDIA: list[Media] = [
+    Media(id=1, name="Startup Logo", url="/media/startup-logo.png"),
+    Media(id=2, name="Channel Banner", url="/media/channel-banner.jpg"),
+    Media(id=3, name="Emergency Slide", url="/media/emergency-slide.png"),
+    Media(id=4, name="Maintenance Card", url="/media/maintenance-card.mp4"),
+]
+
+_HLS_CAPABLE_TYPES: frozenset[str] = frozenset({"dvbs", "dvbt", "ip"})
+
+_INTERFACE_LOGS: dict[str, str] = {
+    "A1": (
+        "[2024-06-01 08:00:01] A1: Tuner initialised – DVB-S2\n"
+        "[2024-06-01 08:00:02] A1: LNB power ON, 13V vertical\n"
+        "[2024-06-01 08:00:03] A1: Frequency 12188 MHz, Symbol rate 27500\n"
+        "[2024-06-01 08:00:04] A1: Lock acquired – SNR 14.2 dB, BER 0\n"
+        "[2024-06-01 08:00:05] A1: Service scan complete – 2 services found\n"
+    ),
+    "A2": (
+        "[2024-06-01 08:00:01] A2: Tuner initialised – DVB-T2\n"
+        "[2024-06-01 08:00:02] A2: Frequency 474000 kHz, Bandwidth 8 MHz\n"
+        "[2024-06-01 08:00:03] A2: Lock acquired – SNR 11.8 dB, BER 1\n"
+        "[2024-06-01 08:00:04] A2: Service scan complete – 2 services found\n"
+    ),
+    "B1": (
+        "[2024-06-01 08:00:01] B1: Tuner initialised – DVB-C\n"
+        "[2024-06-01 08:00:02] B1: Frequency 306000 kHz, Symbol rate 6900\n"
+        "[2024-06-01 08:00:03] B1: No lock – signal not detected\n"
+    ),
+    "C1": (
+        "[2024-06-01 08:00:01] C1: IP input initialised\n"
+        "[2024-06-01 08:00:02] C1: Listening on 239.0.0.1:5000\n"
+        "[2024-06-01 08:00:03] C1: Stream detected – bitrate 8500 kbps\n"
+        "[2024-06-01 08:00:04] C1: Service scan complete – 2 services found\n"
+    ),
+}
+
 
 class DataService:
     """Provides mock data for all entities, replacing the Java backend DB layer."""
@@ -173,6 +218,9 @@ class DataService:
         self._settings = copy.deepcopy(_SETTINGS)
         self._configs = copy.deepcopy(_CONFIGS)
         self._forced_contents = copy.deepcopy(_FORCED_CONTENTS)
+        self._packages = copy.deepcopy(_PACKAGES)
+        self._media = copy.deepcopy(_MEDIA)
+        self._last_update_result: str = "No updates have been installed yet."
 
     # -- Interfaces ---------------------------------------------------------
 
@@ -339,12 +387,84 @@ class DataService:
         """Return all forced-content entries."""
         return copy.deepcopy(self._forced_contents)
 
+    def save_forced_contents(self, contents: list[ForcedContent]) -> Response:
+        """Save forced content entries."""
+        self._forced_contents = {str(fc.id): fc for fc in contents}
+        return Response(success=True)
+
     # -- Feature check ------------------------------------------------------
 
     def get_enabled_type(self, type_name: str) -> bool:
         """Check whether a named feature/type is enabled."""
         result = config.is_feature_enabled(type_name)
         return result if result is not None else False
+
+    # -- Interface log ------------------------------------------------------
+
+    def get_interface_log(self, position: str) -> str:
+        """Return mock log text for the given interface."""
+        return _INTERFACE_LOGS.get(
+            position,
+            f"[INFO] No log data available for interface {position}\n",
+        )
+
+    # -- Cloud --------------------------------------------------------------
+
+    def get_cloud_details(self) -> dict[str, str]:
+        """Return cloud connection details."""
+        return {
+            "status": "connected",
+            "cloud_id": "cloud-ixui-2024-001",
+            "last_sync": "2024-06-01T12:34:56Z",
+            "endpoint": "https://cloud.example.com/api/v1",
+        }
+
+    # -- Software update ----------------------------------------------------
+
+    def get_update_packages(self) -> list[Package]:
+        """Return available software packages."""
+        return copy.deepcopy(self._packages)
+
+    def update_packages(self, packages: list[Package]) -> Response:
+        """Install selected packages."""
+        for pkg in packages:
+            for existing in self._packages:
+                if existing.name == pkg.name:
+                    existing.installed = True
+                    existing.version = pkg.version or existing.version
+                    break
+        self._last_update_result = (
+            f"Successfully installed {len(packages)} package(s)."
+        )
+        return Response(success=True)
+
+    def get_update_result(self) -> str:
+        """Return last update result."""
+        return self._last_update_result
+
+    # -- HLS ----------------------------------------------------------------
+
+    def get_hls_interfaces(self) -> list[Interface]:
+        """Return HLS-capable interfaces."""
+        return [
+            iface for iface in self._interfaces
+            if iface.active and iface.type in _HLS_CAPABLE_TYPES
+        ]
+
+    def save_hls_wizard_services(self, services: list[Service]) -> Response:
+        """Save HLS wizard service configuration."""
+        for svc in services:
+            for i, existing in enumerate(self._services):
+                if existing.id == svc.id:
+                    self._services[i] = svc
+                    break
+        return Response(success=True)
+
+    # -- Media --------------------------------------------------------------
+
+    def get_media(self) -> list[Media]:
+        """Return available media library items."""
+        return copy.deepcopy(self._media)
 
 
 # Singleton instance

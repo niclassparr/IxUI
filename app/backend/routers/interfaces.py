@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, status
 
-from backend.models import Config, Response, Service
+from backend.models import Config, Interface, Response, Service
 from backend.services.data_service import data_service
 
 router = APIRouter(prefix="/api/interfaces", tags=["interfaces"])
@@ -12,6 +12,18 @@ router = APIRouter(prefix="/api/interfaces", tags=["interfaces"])
 async def get_interface_types() -> list[str]:
     """Return all known interface type identifiers."""
     return data_service.get_interface_types()
+
+
+@router.get("/hls/list")
+async def get_hls_interfaces() -> list[Interface]:
+    """Return HLS-capable interfaces."""
+    return data_service.get_hls_interfaces()
+
+
+@router.put("/hls/services", response_model=Response)
+async def save_hls_wizard_services(body: list[Service]) -> Response:
+    """Save HLS wizard service configuration."""
+    return data_service.save_hls_wizard_services(body)
 
 
 @router.get("/")
@@ -30,6 +42,12 @@ async def get_interface(position: str):
             detail=f"Interface {position} not found",
         )
     return iface
+
+
+@router.get("/{position}/log")
+async def get_interface_log(position: str) -> dict[str, str]:
+    """Return log text for the given interface."""
+    return {"log": data_service.get_interface_log(position)}
 
 
 @router.get("/{position}/config/{interface_type}")
