@@ -144,10 +144,22 @@ class IxuiInterfaces extends LitElement {
                     <td colspan="5" class="px-6 py-6 bg-slate-50 border-t border-slate-200">
                       <div class="space-y-6">
                         <!-- Action buttons -->
-                        <div class="flex gap-3">
+                        <div class="flex flex-wrap gap-3">
+                          <button
+                            @click=${(e) => { e.stopPropagation(); window.location.hash = `#interface-edit/${iface.position}/${iface.type}`; }}
+                            class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                          >✏️ Edit Config</button>
+                          <button
+                            @click=${(e) => { e.stopPropagation(); window.location.hash = `#interface-status/${iface.position}/${iface.type}`; }}
+                            class="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                          >📡 Status</button>
+                          <button
+                            @click=${(e) => { e.stopPropagation(); window.location.hash = `#interface-log/${iface.position}`; }}
+                            class="px-4 py-2 text-sm bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition"
+                          >📋 Log</button>
                           <button
                             @click=${(e) => { e.stopPropagation(); this._startScan(iface.position); }}
-                            class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+                            class="px-4 py-2 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition disabled:opacity-50"
                             ?disabled=${this.scanning}
                           >${this.scanning ? 'Scanning...' : '🔍 Start Scan'}</button>
                         </div>

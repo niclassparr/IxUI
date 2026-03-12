@@ -453,11 +453,11 @@ class DataService:
 
     def save_hls_wizard_services(self, services: list[Service]) -> Response:
         """Save HLS wizard service configuration."""
+        existing_by_id = {s.id: i for i, s in enumerate(self._services)}
         for svc in services:
-            for i, existing in enumerate(self._services):
-                if existing.id == svc.id:
-                    self._services[i] = svc
-                    break
+            idx = existing_by_id.get(svc.id)
+            if idx is not None:
+                self._services[idx] = svc
         return Response(success=True)
 
     # -- Media --------------------------------------------------------------
