@@ -34,8 +34,20 @@ app.include_router(system.router)
 
 # -- Static files & SPA catch-all ------------------------------------------
 _FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+_DIST_DIR = _FRONTEND_DIR / "dist"
 _STATIC_DIR = _FRONTEND_DIR / "static"
-_INDEX_HTML = _FRONTEND_DIR / "index.html"
+
+# Prefer the Vite build output (dist/); fall back to source (index.html).
+if _DIST_DIR.is_dir():
+    _SERVE_DIR = _DIST_DIR
+    _INDEX_HTML = _DIST_DIR / "index.html"
+    # Serve Vite build assets (JS/CSS with hashed names)
+    _ASSETS_DIR = _DIST_DIR / "assets"
+    if _ASSETS_DIR.is_dir():
+        app.mount("/assets", StaticFiles(directory=str(_ASSETS_DIR)), name="assets")
+else:
+    _SERVE_DIR = _FRONTEND_DIR
+    _INDEX_HTML = _FRONTEND_DIR / "index.html"
 
 if _STATIC_DIR.is_dir():
     app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
