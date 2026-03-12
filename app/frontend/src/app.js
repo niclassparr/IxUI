@@ -8,6 +8,13 @@ import './components/routes-page.js';
 import './components/settings-page.js';
 import './components/network-page.js';
 import './components/commands-page.js';
+import './components/interface-edit-page.js';
+import './components/interface-status-page.js';
+import './components/interface-log-page.js';
+import './components/cloud-page.js';
+import './components/update-page.js';
+import './components/hls-wizard-page.js';
+import './components/forced-content-page.js';
 
 class IxuiApp extends LitElement {
   createRenderRoot() { return this; }
@@ -50,6 +57,12 @@ class IxuiApp extends LitElement {
     this.currentPage = hash;
   }
 
+  _parseParams() {
+    const hash = window.location.hash.replace('#', '');
+    const parts = hash.split('/');
+    return { page: parts[0], pos: parts[1], type: parts[2] };
+  }
+
   _onLoginSuccess() {
     this.loggedIn = true;
     window.location.hash = '#front-page';
@@ -67,7 +80,9 @@ class IxuiApp extends LitElement {
   }
 
   _renderPage() {
-    switch (this.currentPage) {
+    const params = this._parseParams();
+    const page = params.page || 'front-page';
+    switch (page) {
       case 'interfaces':
         return html`<ixui-interfaces></ixui-interfaces>`;
       case 'routes':
@@ -78,6 +93,20 @@ class IxuiApp extends LitElement {
         return html`<ixui-network></ixui-network>`;
       case 'commands':
         return html`<ixui-commands></ixui-commands>`;
+      case 'interface-edit':
+        return html`<ixui-interface-edit .position=${params.pos} .interfaceType=${params.type}></ixui-interface-edit>`;
+      case 'interface-status':
+        return html`<ixui-interface-status .position=${params.pos} .interfaceType=${params.type}></ixui-interface-status>`;
+      case 'interface-log':
+        return html`<ixui-interface-log .position=${params.pos}></ixui-interface-log>`;
+      case 'cloud':
+        return html`<ixui-cloud></ixui-cloud>`;
+      case 'update':
+        return html`<ixui-update></ixui-update>`;
+      case 'hls-wizard':
+        return html`<ixui-hls-wizard></ixui-hls-wizard>`;
+      case 'forced-content':
+        return html`<ixui-forced-content></ixui-forced-content>`;
       case 'front-page':
       default:
         return html`<ixui-front-page></ixui-front-page>`;

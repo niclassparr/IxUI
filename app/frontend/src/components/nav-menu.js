@@ -39,14 +39,32 @@ class IxuiNav extends LitElement {
   }
 
   _navItems() {
-    return [
+    const items = [
       { id: 'front-page', label: 'Dashboard', icon: '📊' },
+      { type: 'separator' },
       { id: 'interfaces', label: 'Interfaces', icon: '🔌' },
       { id: 'routes', label: 'Routes', icon: '🔀' },
+      { type: 'separator' },
       { id: 'settings', label: 'Settings', icon: '⚙️' },
       { id: 'network', label: 'Network', icon: '🌐' },
       { id: 'commands', label: 'Commands', icon: '⚡' },
+      { type: 'separator' },
     ];
+
+    if (this.unitInfo?.cloud) {
+      items.push({ id: 'cloud', label: 'Cloud', icon: '☁️' });
+    }
+    if (this.unitInfo?.hls_output) {
+      items.push({ id: 'hls-wizard', label: 'HLS Wizard', icon: '📺' });
+    }
+    if (this.unitInfo?.forced_content) {
+      items.push({ id: 'forced-content', label: 'Forced Content', icon: '📌' });
+    }
+    if (this.unitInfo?.software_update) {
+      items.push({ id: 'update', label: 'Software Update', icon: '🔄' });
+    }
+
+    return items;
   }
 
   render() {
@@ -77,7 +95,9 @@ class IxuiNav extends LitElement {
         <!-- Navigation -->
         <nav class="flex-1 py-4 overflow-y-auto">
           <ul class="space-y-1 px-3">
-            ${this._navItems().map(item => html`
+            ${this._navItems().map(item => item.type === 'separator' ? html`
+              <li class="my-2 border-t border-slate-700"></li>
+            ` : html`
               <li>
                 <button
                   @click=${() => this._navigate(item.id)}

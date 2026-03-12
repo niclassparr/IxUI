@@ -158,6 +158,55 @@ function getFeature(name) {
   return request(`/system/feature/${name}`);
 }
 
+function getInterfaceLog(pos) {
+  return request(`/interfaces/${pos}/log`);
+}
+
+function getCloudDetails() {
+  return request('/system/cloud-details');
+}
+
+function getUpdatePackages() {
+  return request('/system/update-packages');
+}
+
+function installUpdatePackages(packages) {
+  return request('/system/update-packages', {
+    method: 'POST',
+    body: JSON.stringify(packages),
+  });
+}
+
+function getUpdateResult() {
+  return request('/system/update-result');
+}
+
+function getForcedContents() {
+  return request('/system/forced-contents');
+}
+
+function saveForcedContents(contents) {
+  return request('/system/forced-contents', {
+    method: 'PUT',
+    body: JSON.stringify(contents),
+  });
+}
+
+function getHlsInterfaces() {
+  return request('/interfaces/hls/list');
+}
+
+function saveHlsWizardServices(services) {
+  return request('/interfaces/hls/services', {
+    method: 'PUT',
+    body: JSON.stringify(services),
+  });
+}
+
+function getMedia() {
+  return request('/system/media');
+}
+
 export {
   login,
   logout,
@@ -185,4 +234,14 @@ export {
   runCommand,
   getJsonInfo,
   getFeature,
+  getInterfaceLog,
+  getCloudDetails,
+  getUpdatePackages,
+  installUpdatePackages,
+  getUpdateResult,
+  getForcedContents,
+  saveForcedContents,
+  getHlsInterfaces,
+  saveHlsWizardServices,
+  getMedia,
 };
