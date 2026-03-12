@@ -1,0 +1,95 @@
+package se.ixanon.ixui.client;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+
+import se.ixanon.ixui.shared.Bitrate;
+import se.ixanon.ixui.shared.Config;
+import se.ixanon.ixui.shared.Emm;
+import se.ixanon.ixui.shared.ForcedContent;
+import se.ixanon.ixui.shared.Interface;
+import se.ixanon.ixui.shared.IpMac;
+import se.ixanon.ixui.shared.IpStatus;
+import se.ixanon.ixui.shared.Media;
+import se.ixanon.ixui.shared.NameValue;
+import se.ixanon.ixui.shared.Package;
+import se.ixanon.ixui.shared.Response;
+import se.ixanon.ixui.shared.Route;
+import se.ixanon.ixui.shared.Service;
+import se.ixanon.ixui.shared.SessionKeys;
+import se.ixanon.ixui.shared.StreamerStatus;
+import se.ixanon.ixui.shared.TunerStatus;
+import se.ixanon.ixui.shared.UnitInfo;
+
+import com.google.gwt.user.client.rpc.RemoteService;
+import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
+
+@RemoteServiceRelativePath("ixui")
+public interface IxuiService extends RemoteService {
+
+	boolean validateSession(String sessionKey, String username);
+	SessionKeys checkPersmission(String sessionKey, SessionKeys full_token);
+	String login(String username, String password);
+	void logout(String sessionKey);
+	ArrayList<Interface> getInterfaces(String sessionKey, boolean isInterfaces);
+	//String getInterfacePosition(String sessionKey, int interface_id);
+	Date getInterfaceScanTime(String sessionKey, String interface_pos);
+	Config getConfig(String sessionKey, String interface_pos, String interface_type);
+	Response setConfig(String sessionKey, Config config, String interface_type);
+	ArrayList<Service> getServices(String sessionKey, String interface_pos);
+	Response saveServices(ArrayList<Service> services, String interface_type, String interface_pos);
+	ArrayList<Route> getRoutes(String sessionKey);
+	ArrayList<Bitrate> getBitrates(String sessionKey);
+	Response updateRoutes(String sessionKey, ArrayList<Route> routes);
+	ArrayList<NameValue> getSettings(String sessionKey);
+	HashMap<String, String> getSettings(String sessionKey, boolean temp);
+	Response updateSettings(String sessionKey, HashMap<String, String> settings);
+	Response updateSettings(String sessionKey, ArrayList<NameValue> values);
+	Response updateSettingsNew(String sessionKey, HashMap<String, NameValue> settings);
+	String interfaceStatus(String interface_pos);
+	Response interfaceSet(String sessionKey, String interface_pos, String interface_type);
+	Response interfaceScan(String interface_pos);
+	ArrayList<Service> interfaceScanResult(String interface_pos);
+	Response interfaceUpdate();
+	Interface getInterface(String interface_pos, boolean with_status);
+	StreamerStatus interfaceStreamerStatus(String interface_pos, String interface_type);
+	TunerStatus interfaceTunerStatus(String interface_pos, String interface_type);
+	Response interfaceCommand(String interface_pos, String command);
+	Response pushConfig();
+	String interfaceLog(String interface_pos);
+	boolean isConfigChanged(String sessionKey);
+	int getMaxBitrates(String interface_type);
+	boolean getEnabledType(String type);
+	UnitInfo getUnitInfo();
+	HashMap<String, NameValue> getNetworkSettings();
+	Response runCommand(String command, String filename);
+	Response savePDF(String filename);
+	ArrayList<Package> getUpdatePackages();
+	Response updatePackages(ArrayList<Package> packages);
+	String getUpdateResult();
+	Response runUpdateCommand(String command);
+	Response updateInterfaceMultibandType(String interface_pos, String interface_type);
+	String getSessionValue(String key);
+	ArrayList<String> runCommand2(String command);
+	Response saveDateTime(String sessionKey, boolean isRestart, String timezone, boolean ntp_mode, String date, String time);
+	HashMap<String, String> getCloudDetails(String sessionKey);
+	ArrayList<Interface> getInterfacesHls(String sessionKey);
+	Response saveHlsWizardServices(String sessionKey, ArrayList<Service> services);
+	HashMap<String, Integer> getModulators(String sessionKey);
+	void saveModulatorsConfig(HashMap<String, Integer> modulators);
+	HashMap<Integer, ForcedContent> getForcedContents(String sessionKey);
+	Response saveForcedContents(ArrayList<ForcedContent> forced_contents);
+	ArrayList<ForcedContent> getEnabledForcedContents(String sessionKey);
+	void saveForcedContentOverrideStatus(int id, int index);
+	ArrayList<Media> getMedia();
+	boolean isSoftwareUpdate();
+	ArrayList<String> getInterfaceTypes();
+	Response updatePw(String username, String old_password, String new_password);
+	ArrayList<IpMac> getNetworkStatus(String sessionKey);
+	HashMap<String, IpStatus> getNetworkStatus2(String sessionKey);
+	Response setInterfaceInfoch(Config config, boolean isScan);
+	Config getInterfaceInfoch(String interface_pos);
+	Emm getCurrentEmmList(String interface_pos, boolean isDsc);
+	String getJsonInfo();
+}

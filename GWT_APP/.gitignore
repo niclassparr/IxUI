@@ -1,0 +1,29 @@
+##### GWT
+#Caching for already compiled files
+gwt-unitCache/
+
+#Compile logs
+.gwt/
+
+#Caches and stuff
+war/WEB-INF/deploy/
+war/WEB-INF/classes/
+
+# Package files
+*.jar
+*.war
+
+*.class
+
+#Client side compiled stuff
+/war/ixui
+
+# Eclipse project files
+.settings/
+.project
+.classpath
+test/
+test-classes/
+
+#Favicon
+war/favicon.ico

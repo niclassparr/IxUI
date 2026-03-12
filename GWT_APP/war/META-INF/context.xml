@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+	<Parameter name="app_name" value="ixui" />
+	<Parameter name="enableCloud" value="true" />
+	<Parameter name="enableForcedContent" value="true" />
+	<Parameter name="enableSoftwareUpdate" value="false" />
+	<Parameter name="enableHlsoutput" value="true" />
+	<Parameter name="enablePortal" value="true" />
+</Context>

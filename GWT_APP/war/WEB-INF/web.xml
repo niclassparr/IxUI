@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+Source - https://stackoverflow.com/a
+Posted by Piyush Pranjal, modified by community. See post 'Timeline' for change history
+Retrieved 2026-01-22, License - CC BY-SA 4.0
+-->
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd" version="4.0">
+
+
+  <!-- Servlet context listener -->
+  <listener>
+  	<listener-class>se.ixanon.ixui.server.ContextManager</listener-class>
+  </listener>
+  
+  <!-- Servlets -->
+  <servlet>
+    <servlet-name>pdfServlet</servlet-name>
+    <servlet-class>se.ixanon.ixui.server.DownloadPdfServlet</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>pdfServlet</servlet-name>
+    <url-pattern>/api/pdf</url-pattern>
+  </servlet-mapping>
+  
+  <servlet>
+    <servlet-name>jsonServlet</servlet-name>
+    <servlet-class>se.ixanon.ixui.server.JsonServlet</servlet-class>
+  </servlet>
+  
+  <servlet-mapping>
+    <servlet-name>jsonServlet</servlet-name>
+    <url-pattern>/api/json</url-pattern>
+  </servlet-mapping>
+  
+  <servlet>
+    <servlet-name>ixuiServlet</servlet-name>
+    <servlet-class>se.ixanon.ixui.server.IxuiServiceImpl</servlet-class>
+  </servlet>
+  
+  <servlet-mapping>
+    <servlet-name>ixuiServlet</servlet-name>
+    <url-pattern>/ixui/ixui</url-pattern>
+  </servlet-mapping>
+
+  <filter>
+	<filter-name>gwtCacheControlFilter</filter-name>
+	<filter-class>se.ixanon.ixui.server.CGWTCacheControlFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>gwtCacheControlFilter</filter-name>
+    <url-pattern>*.js</url-pattern>
+    <dispatcher>REQUEST</dispatcher>
+  </filter-mapping>
+  
+  <!-- Default page to serve -->
+  <welcome-file-list>
+    <welcome-file>Ixui.html</welcome-file>
+  </welcome-file-list>
+
+</web-app>

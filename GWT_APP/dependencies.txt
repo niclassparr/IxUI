@@ -1,0 +1,12 @@
+GWT 2.8.1
+
+commons-io-2.3
+commons-logging-1.2
+fontbox-2.0.6
+pdfbox-2.0.6
+pdfbox-tools-2.0.6
+postgresql-9.3-1103.jdbc3
+serializer-2.7.1
+xalan-2.7.1
+xercesImpl-2.11.0
+xml-apis-1.4.01
