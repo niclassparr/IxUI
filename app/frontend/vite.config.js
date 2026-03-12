@@ -1,0 +1,17 @@
+import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
+
+export default defineConfig({
+  plugins: [tailwindcss()],
+  root: ".",
+  build: {
+    outDir: "dist",
+    emptyOutDir: true,
+  },
+  server: {
+    proxy: {
+      "/api": "http://localhost:8000",
+      "/health": "http://localhost:8000",
+    },
+  },
+});
