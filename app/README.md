@@ -45,12 +45,54 @@ app/
 
 ## Quick Start
 
-### Prerequisites
+### Docker (recommended)
+
+The easiest way to run the full stack (app + database) is with Docker Compose from
+the **repository root**:
+
+```bash
+# First run / after code changes – build images and start everything
+docker compose up --build
+
+# Subsequent runs – start without rebuilding
+docker compose up
+
+# Run in the background
+docker compose up --build -d
+
+# Stop all containers
+docker compose down
+
+# Stop and remove the database volume (resets all data)
+docker compose down -v
+```
+
+The app is available at **http://localhost:8000** once the containers are up.
+
+> **How it works:** `Dockerfile` uses a multi-stage build – Node.js compiles the
+> Vite/Lit frontend in the first stage, and the built assets are copied into a
+> slim Python image that serves them via FastAPI.
+
+#### Production: change the database password
+
+The default database password is `postgres`. For production deployments set the
+`POSTGRES_PASSWORD` environment variable before starting the stack:
+
+```bash
+export POSTGRES_PASSWORD=<your-strong-password>
+docker compose up --build -d
+```
+
+---
+
+### Manual Setup
+
+#### Prerequisites
 
 - Python 3.12+
 - Node.js 18+
 
-### Backend
+#### Backend
 
 ```bash
 cd app
@@ -58,7 +100,7 @@ pip install -r backend/requirements.txt
 PYTHONPATH=. python -m uvicorn backend.main:app --reload --port 8000
 ```
 
-### Frontend (Development)
+#### Frontend (Development)
 
 ```bash
 cd app/frontend
@@ -68,7 +110,7 @@ npm run dev
 
 The Vite dev server runs on `http://localhost:3000` and proxies API requests to the backend.
 
-### Frontend (Production Build)
+#### Frontend (Production Build)
 
 ```bash
 cd app/frontend
