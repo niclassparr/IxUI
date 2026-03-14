@@ -3,6 +3,7 @@
 Ported from ContextManager.java - centralized config for the IxUI application.
 """
 
+import os
 from dataclasses import dataclass, field
 
 
@@ -23,6 +24,13 @@ class AppConfig:
     debug: bool = False
     cors_origins: list[str] = field(
         default_factory=lambda: ["http://localhost:3000", "http://localhost:5173"]
+    )
+
+    # Database – defaults match DatabaseUtils.java; override via DATABASE_URL env var.
+    database_url: str = field(
+        default_factory=lambda: os.environ.get(
+            "DATABASE_URL", "postgresql://postgres:@localhost:5432/ixui"
+        )
     )
 
     def is_feature_enabled(self, feature_name: str) -> bool | None:
