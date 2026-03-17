@@ -127,16 +127,21 @@ _ROUTES: list[Route] = [
 ]
 
 _SETTINGS: list[NameValue] = [
-    NameValue(id=1, name="hostname", value="ixui-unit-1"),
-    NameValue(id=2, name="ip", value="192.168.1.100"),
-    NameValue(id=3, name="netmask", value="255.255.255.0"),
-    NameValue(id=4, name="gateway", value="192.168.1.1"),
-    NameValue(id=5, name="dns", value="8.8.8.8"),
-    NameValue(id=6, name="ntp", value="pool.ntp.org"),
-    NameValue(id=7, name="timezone", value="Europe/London"),
-    NameValue(id=8, name="output_mode", value="dvbt"),
-    NameValue(id=9, name="output_frequency", value="474000"),
-    NameValue(id=10, name="output_bandwidth", value="8"),
+    NameValue(id=1, name="nw_hostname", value="209990"),
+    NameValue(id=2, name="nw_gateway", value="192.168.0.1"),
+    NameValue(id=3, name="nw_multicastdev", value="eth0"),
+    NameValue(id=4, name="nw_dns1", value="8.8.4.4"),
+    NameValue(id=5, name="nw_dns2", value=""),
+    NameValue(id=6, name="nw_eth0_bootproto", value="static"),
+    NameValue(id=7, name="nw_eth0_onboot", value="yes"),
+    NameValue(id=8, name="nw_eth0_ipaddr", value="192.168.0.73"),
+    NameValue(id=9, name="nw_eth0_netmask", value="255.255.255.0"),
+    NameValue(id=10, name="nw_eth0_mac", value="00:22:ab:80:7b:5e"),
+    NameValue(id=11, name="nw_eth1_bootproto", value="static"),
+    NameValue(id=12, name="nw_eth1_onboot", value="yes"),
+    NameValue(id=13, name="nw_eth1_ipaddr", value="172.16.0.1"),
+    NameValue(id=14, name="nw_eth1_netmask", value="255.255.255.0"),
+    NameValue(id=15, name="nw_eth1_mac", value="00:22:ab:80:7b:5f"),
 ]
 
 _CONFIGS: dict[str, Config] = {
@@ -172,9 +177,8 @@ _FORCED_CONTENTS: dict[str, ForcedContent] = {
 }
 
 _NETWORK_HOSTS: list[IpMac] = [
-    IpMac(ip="192.168.1.100", mac="00:1A:2B:3C:4D:5E"),
-    IpMac(ip="192.168.1.101", mac="00:1A:2B:3C:4D:5F"),
-    IpMac(ip="192.168.1.102", mac="00:1A:2B:3C:4D:60"),
+    IpMac(ip="192.168.0.73", mac="00:22:AB:80:7B:5E"),
+    IpMac(ip="172.16.0.1", mac="00:22:AB:80:7B:5F"),
 ]
 
 _PACKAGES: list[Package] = [
@@ -1023,10 +1027,12 @@ class DataService:
         return copy.deepcopy(_NETWORK_HOSTS)
 
     def get_network_status2(self) -> dict[str, IpStatus]:
-        """Return enriched network status keyed by IP."""
+        """Return enriched network status for gateway, DNS and public IP reachability."""
         return {
-            h.ip: IpStatus(ip=h.ip, mac=h.mac, status="online")
-            for h in _NETWORK_HOSTS
+            "gateway": IpStatus(ip="192.168.0.1", status="online"),
+            "dns1": IpStatus(ip="8.8.4.4", status="online"),
+            "dns2": IpStatus(ip="", status="offline"),
+            "public": IpStatus(ip="203.0.113.10", status="online"),
         }
 
     # ------------------------------------------------------------------
@@ -1139,7 +1145,7 @@ class DataService:
 
     def run_command(self, command: str) -> Response:
         """Simulate running a system command."""
-        allowed = {"reboot", "restart-services", "factory-reset", "update-epg"}
+        allowed = {"reboot", "restart-services", "factory-reset", "update-epg", "wnet"}
         if command not in allowed:
             return Response(success=False, error=f"Unknown command: {command}")
         return Response(success=True)

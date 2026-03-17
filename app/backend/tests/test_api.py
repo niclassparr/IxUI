@@ -212,10 +212,11 @@ class TestSettings:
         r = client.get("/api/settings/")
         assert r.status_code == 200
         data = r.json()
-        assert len(data) == 10
+        assert len(data) == 15
         names = {s["name"] for s in data}
-        assert "hostname" in names
-        assert "ip" in names
+        assert "nw_hostname" in names
+        assert "nw_eth0_ipaddr" in names
+        assert "nw_eth1_bootproto" in names
 
     def test_update_settings(self, client):
         r = client.get("/api/settings/")
@@ -228,7 +229,7 @@ class TestSettings:
         r = client.get("/api/settings/network-status")
         assert r.status_code == 200
         data = r.json()
-        assert len(data) == 3
+        assert len(data) == 2
         assert "ip" in data[0]
         assert "mac" in data[0]
 
@@ -236,8 +237,9 @@ class TestSettings:
         r = client.get("/api/settings/network-status2")
         assert r.status_code == 200
         data = r.json()
-        assert "192.168.1.100" in data
-        assert data["192.168.1.100"]["status"] == "online"
+        assert "gateway" in data
+        assert data["gateway"]["ip"] == "192.168.0.1"
+        assert data["public"]["status"] == "online"
 
 
 # ---------------------------------------------------------------------------
@@ -257,6 +259,11 @@ class TestSystem:
 
     def test_run_command_allowed(self, client):
         r = client.post("/api/system/command", json={"command": "reboot"})
+        assert r.status_code == 200
+        assert r.json()["success"] is True
+
+    def test_run_command_network_reload(self, client):
+        r = client.post("/api/system/command", json={"command": "wnet"})
         assert r.status_code == 200
         assert r.json()["success"] is True
 
@@ -334,6 +341,10 @@ class TestDataService:
         resp = data_service.run_command("reboot")
         assert resp.success is True
 
+    def test_run_command_network_reload(self, data_service):
+        resp = data_service.run_command("wnet")
+        assert resp.success is True
+
     def test_run_command_disallowed(self, data_service):
         resp = data_service.run_command("dangerous")
         assert resp.success is False
@@ -352,7 +363,8 @@ class TestDataService:
 
     def test_get_network_status(self, data_service):
         hosts = data_service.get_network_status()
-        assert len(hosts) == 3
+        assert len(hosts) == 2
+        assert hosts[0].ip == "192.168.0.73"
 
     def test_get_bitrates(self, data_service):
         bitrates = data_service.get_bitrates()
