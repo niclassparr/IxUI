@@ -1,0 +1,39 @@
+services:
+
+  # ── PostgreSQL database ─────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ixui
+      POSTGRES_USER: postgres
+      # Override POSTGRES_PASSWORD with a strong value for production,
+      # e.g. export POSTGRES_PASSWORD=<secret> before running docker compose.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      # Seed the database with the schema on first start
+      - ./app/ixui_73_260312.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      # Persist data across restarts
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ixui"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Application (Python backend + built frontend) ───────────────────────
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/ixui
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:

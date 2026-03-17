@@ -1,0 +1,28 @@
+# Python byte-code and caches
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.eggs/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Node modules and frontend build output (rebuilt inside Docker)
+node_modules/
+frontend/dist/
+
+# IDE / OS artefacts
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+.env.*
