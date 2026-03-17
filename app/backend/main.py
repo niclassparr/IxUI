@@ -4,6 +4,8 @@ Mounts all API routers, serves static frontend assets, and provides
 a catch-all route for SPA (single-page application) support.
 """
 
+import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -14,7 +16,29 @@ from fastapi.staticfiles import StaticFiles
 from backend.config import config
 from backend.routers import auth, interfaces, routes, settings, system
 
-app = FastAPI(title="IxUI", version="3.2.1")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: test database connection
+    from backend.db import check_connection
+    db_ok = check_connection()
+    if db_ok:
+        logger.info("Database is connected – serving live data")
+    else:
+        logger.warning(
+            "Database is NOT available – serving demo fixture data. "
+            "Set DATABASE_URL to connect to PostgreSQL."
+        )
+    yield
+
+
+app = FastAPI(title="IxUI", version="3.2.1", lifespan=lifespan)
 
 # -- CORS for development --------------------------------------------------
 app.add_middleware(

@@ -31,6 +31,7 @@ def get_connection():
     """Return a new psycopg2 connection, or None if the DB is unavailable."""
     url = get_db_url()
     if not url:
+        logger.warning("DATABASE_URL is not configured – using demo data")
         return None
     try:
         import psycopg2
@@ -40,8 +41,47 @@ def get_connection():
         conn.autocommit = False
         return conn
     except Exception as exc:
-        logger.debug("Cannot connect to database: %s", exc)
+        logger.warning("Cannot connect to database (%s): %s", url.split('@')[-1] if '@' in url else url, exc)
         return None
+
+
+def check_connection() -> bool:
+    """Test the database connection at startup. Returns True if successful."""
+    url = get_db_url()
+    if not url:
+        logger.warning("No DATABASE_URL configured – app will serve demo data only")
+        return False
+    try:
+        import psycopg2
+        conn = psycopg2.connect(url)
+        cur = conn.cursor()
+        cur.execute("SELECT current_database(), current_user;")
+        db_name, db_user = cur.fetchone()
+        # Verify critical tables exist
+        cur.execute(
+            "SELECT table_name FROM information_schema.tables"
+            " WHERE table_schema = 'public'"
+            " ORDER BY table_name;"
+        )
+        tables = [row[0] for row in cur.fetchall()]
+        cur.close()
+        conn.close()
+        logger.info(
+            "Database connection OK – db=%s user=%s tables=%s",
+            db_name, db_user, tables,
+        )
+        if "interfaces" not in tables:
+            logger.warning(
+                "Table 'interfaces' not found in database!"
+                " Schema may not have been loaded. Found tables: %s", tables
+            )
+            return False
+        return True
+    except Exception as exc:
+        logger.error(
+            "Database connection FAILED – app will serve demo data only. Error: %s", exc
+        )
+        return False
 
 
 @contextmanager
