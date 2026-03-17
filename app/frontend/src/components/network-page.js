@@ -119,13 +119,15 @@ class IxuiNetwork extends LitElement {
 
   _deviceRows() {
     const rows = [];
+    let foundInterface = false;
     for (let index = 0; index <= 9; index += 1) {
       const type = `eth${index}`;
       const hasRow = this.settings.some(setting => setting.name.startsWith(`nw_${type}_`));
       if (!hasRow) {
-        if (rows.length > 0) break;
+        if (foundInterface) break;
         continue;
       }
+      foundInterface = true;
 
       rows.push({
         index,

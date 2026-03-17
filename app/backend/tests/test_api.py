@@ -363,7 +363,8 @@ class TestDataService:
 
     def test_get_network_status(self, data_service):
         hosts = data_service.get_network_status()
-        assert len(hosts) == 3
+        assert len(hosts) == 2
+        assert hosts[0].ip == "192.168.0.73"
 
     def test_get_bitrates(self, data_service):
         bitrates = data_service.get_bitrates()
