@@ -51,7 +51,7 @@ class IxuiFrontPage extends LitElement {
       this.bitrates = bitrates || [];
 
       // Load feature flags
-      const featureNames = ['hls_output', 'cloud', 'portal'];
+      const featureNames = ['hls_output', 'cloud', 'portal', 'forced_content', 'software_update' ];
       const featureResults = await Promise.allSettled(
         featureNames.map(f => api.getFeature(f))
       );
@@ -135,20 +135,6 @@ class IxuiFrontPage extends LitElement {
           </div>
         </div>
 
-        <!-- Interfaces Overview -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-            <span class="text-blue-500">🔌</span> Interfaces Overview
-          </h2>
-          ${this.interfaces.length === 0 ? html`
-            <p class="text-slate-400 text-sm">No interfaces found</p>
-          ` : html`
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              ${this.interfaces.map(iface => this._renderInterfaceCard(iface))}
-            </div>
-          `}
-        </div>
-
         <!-- Bitrates -->
         ${this.bitrates.length > 0 ? html`
           <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -167,6 +153,22 @@ class IxuiFrontPage extends LitElement {
             </div>
           </div>
         ` : ''}
+
+        <!-- Interfaces Overview -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+            <span class="text-blue-500">🔌</span> Interfaces Overview
+          </h2>
+          ${this.interfaces.length === 0 ? html`
+            <p class="text-slate-400 text-sm">No interfaces found</p>
+          ` : html`
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              ${this.interfaces.map(iface => this._renderInterfaceCard(iface))}
+            </div>
+          `}
+        </div>
+
+
       </div>
     `;
   }

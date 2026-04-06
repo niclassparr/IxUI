@@ -204,6 +204,7 @@ _ROUTES: list[Route] = [
 ]
 
 _SETTINGS: list[NameValue] = [
+
     NameValue(id=1, name="dvbc_enable", value="true"),
     NameValue(id=2, name="dvbc_freq", value="330000000"),
     NameValue(id=3, name="dvbc_symb", value="6900000"),
@@ -275,6 +276,7 @@ _SETTINGS: list[NameValue] = [
     NameValue(id=69, name="ixcloud_validate_date", value=""),
     NameValue(id=70, name="ixcloud_validate_message", value="Cloud is offline."),
     NameValue(id=71, name="ixcloud_beaconid", value="IXCLOUD-DEMO-001"),
+
 ]
 
 _CONFIGS: dict[str, Config] = {
@@ -364,9 +366,8 @@ _FORCED_CONTENTS: dict[str, ForcedContent] = {
 }
 
 _NETWORK_HOSTS: list[IpMac] = [
-    IpMac(ip="192.168.1.100", mac="00:1A:2B:3C:4D:5E"),
-    IpMac(ip="192.168.1.101", mac="00:1A:2B:3C:4D:5F"),
-    IpMac(ip="192.168.1.102", mac="00:1A:2B:3C:4D:60"),
+    IpMac(ip="192.168.0.73", mac="00:22:AB:80:7B:5E"),
+    IpMac(ip="172.16.0.1", mac="00:22:AB:80:7B:5F"),
 ]
 
 _PACKAGES: list[Package] = [

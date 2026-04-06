@@ -607,6 +607,11 @@ class TestSystem:
         assert r.status_code == 200
         assert r.json()["success"] is True
 
+    def test_run_command_network_reload(self, client):
+        r = client.post("/api/system/command", json={"command": "wnet"})
+        assert r.status_code == 200
+        assert r.json()["success"] is True
+
     def test_run_command_unknown(self, client):
         r = client.post("/api/system/command", json={"command": "rm-rf"})
         assert r.status_code == 200
@@ -942,6 +947,10 @@ class TestDataService:
 
     def test_run_command_allowed(self, data_service):
         resp = data_service.run_command("reboot")
+        assert resp.success is True
+
+    def test_run_command_network_reload(self, data_service):
+        resp = data_service.run_command("wnet")
         assert resp.success is True
 
     def test_run_command_disallowed(self, data_service):
