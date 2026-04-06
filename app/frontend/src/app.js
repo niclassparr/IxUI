@@ -16,6 +16,28 @@ import './components/update-page.js';
 import './components/hls-wizard-page.js';
 import './components/forced-content-page.js';
 
+const _PAGE_ALIASES = {
+  '': 'dashboard',
+  'front-page': 'dashboard',
+  dashboard: 'dashboard',
+  routes: 'layout',
+  layout: 'layout',
+  'forced-content': 'force-content',
+  'force-content': 'force-content',
+};
+
+function _normalizePageToken(page) {
+  return _PAGE_ALIASES[page] || page || 'dashboard';
+}
+
+function _navSectionForPage(page) {
+  const normalizedPage = _normalizePageToken(page);
+  if (['interface-edit', 'interface-status', 'interface-log'].includes(normalizedPage)) {
+    return 'interfaces';
+  }
+  return normalizedPage;
+}
+
 class IxuiApp extends LitElement {
   createRenderRoot() { return this; }
 
@@ -28,7 +50,7 @@ class IxuiApp extends LitElement {
   constructor() {
     super();
     this.loggedIn = false;
-    this.currentPage = 'front-page';
+    this.currentPage = 'dashboard';
     this.checking = true;
   }
 
@@ -53,19 +75,39 @@ class IxuiApp extends LitElement {
   }
 
   _onHashChange() {
-    const hash = window.location.hash.replace('#', '') || 'front-page';
-    this.currentPage = hash;
+    const params = this._parseParams();
+    const canonicalHash = this._canonicalizeHash(params);
+    const currentHash = window.location.hash.replace('#', '');
+    if (currentHash !== canonicalHash) {
+      window.history.replaceState(
+        null,
+        '',
+        `${window.location.pathname}${window.location.search}#${canonicalHash}`,
+      );
+    }
+    this.currentPage = params.page;
   }
 
-  _parseParams() {
-    const hash = window.location.hash.replace('#', '');
+  _parseParams(hash = window.location.hash.replace('#', '')) {
     const parts = hash.split('/');
-    return { page: parts[0], pos: parts[1], type: parts[2] };
+    return {
+      page: _normalizePageToken(parts[0]),
+      pos: parts[1],
+      type: parts[2],
+    };
+  }
+
+  _canonicalizeHash(params) {
+    return [
+      _normalizePageToken(params.page),
+      params.pos,
+      params.type,
+    ].filter((part) => part != null && part !== '').join('/');
   }
 
   _onLoginSuccess() {
     this.loggedIn = true;
-    window.location.hash = '#front-page';
+    window.location.hash = '#dashboard';
   }
 
   async _onLogout() {
@@ -75,17 +117,20 @@ class IxuiApp extends LitElement {
   }
 
   _onNavigate(e) {
-    this.currentPage = e.detail.page;
-    window.location.hash = `#${e.detail.page}`;
+    const page = _normalizePageToken(e.detail.page);
+    this.currentPage = page;
+    window.location.hash = `#${page}`;
   }
 
   _renderPage() {
     const params = this._parseParams();
-    const page = params.page || 'front-page';
+    const page = params.page || 'dashboard';
     switch (page) {
+      case 'dashboard':
+        return html`<ixui-front-page></ixui-front-page>`;
       case 'interfaces':
         return html`<ixui-interfaces></ixui-interfaces>`;
-      case 'routes':
+      case 'layout':
         return html`<ixui-routes></ixui-routes>`;
       case 'settings':
         return html`<ixui-settings></ixui-settings>`;
@@ -105,9 +150,8 @@ class IxuiApp extends LitElement {
         return html`<ixui-update></ixui-update>`;
       case 'hls-wizard':
         return html`<ixui-hls-wizard></ixui-hls-wizard>`;
-      case 'forced-content':
+      case 'force-content':
         return html`<ixui-forced-content></ixui-forced-content>`;
-      case 'front-page':
       default:
         return html`<ixui-front-page></ixui-front-page>`;
     }
@@ -125,7 +169,7 @@ class IxuiApp extends LitElement {
     return html`
       <div class="flex min-h-screen">
         <ixui-nav
-          .activePage=${this.currentPage}
+          .activePage=${_navSectionForPage(this.currentPage)}
           @navigate=${this._onNavigate}
           @logout=${this._onLogout}
         ></ixui-nav>

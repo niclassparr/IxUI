@@ -7,6 +7,7 @@ class IxuiCloud extends LitElement {
   static properties = {
     cloudDetails: { type: Object },
     loading: { type: Boolean },
+    runningCommand: { type: String },
     notification: { type: Object },
   };
 
@@ -14,16 +15,34 @@ class IxuiCloud extends LitElement {
     super();
     this.cloudDetails = null;
     this.loading = true;
+    this.runningCommand = null;
     this.notification = null;
+    this._refreshInterval = null;
+    this._notificationTimer = null;
   }
 
   connectedCallback() {
     super.connectedCallback();
     this._loadCloudDetails();
+    this._refreshInterval = window.setInterval(() => {
+      this._loadCloudDetails(false);
+    }, 5000);
   }
 
-  async _loadCloudDetails() {
-    this.loading = true;
+  disconnectedCallback() {
+    if (this._refreshInterval) {
+      window.clearInterval(this._refreshInterval);
+      this._refreshInterval = null;
+    }
+    if (this._notificationTimer) {
+      window.clearTimeout(this._notificationTimer);
+      this._notificationTimer = null;
+    }
+    super.disconnectedCallback();
+  }
+
+  async _loadCloudDetails(showSpinner = true) {
+    this.loading = showSpinner;
     try {
       this.cloudDetails = await api.getCloudDetails();
     } catch {
@@ -35,7 +54,38 @@ class IxuiCloud extends LitElement {
 
   _showNotification(message, type = 'info') {
     this.notification = { message, type };
-    setTimeout(() => { this.notification = null; }, 3000);
+    if (this._notificationTimer) {
+      window.clearTimeout(this._notificationTimer);
+    }
+    this._notificationTimer = window.setTimeout(() => { this.notification = null; }, 3000);
+  }
+
+  _cloudEnabled() {
+    return String(this.cloudDetails?.ixcloud_enable || 'false').toLowerCase() === 'true';
+  }
+
+  _cloudOnline() {
+    return String(this.cloudDetails?.ixcloud_online || 'false').toLowerCase() === 'true';
+  }
+
+  async _runCloudCommand(command) {
+    this.runningCommand = command;
+    try {
+      const response = await api.runCommand(command);
+      if (!response?.success) {
+        this._showNotification(response?.error || 'Cloud command failed', 'error');
+        this.runningCommand = null;
+        return;
+      }
+      this._showNotification(
+        command === 'ixcloud-connect' ? 'Cloud connect command completed' : 'Cloud disconnect command completed',
+        'success'
+      );
+      await this._loadCloudDetails(false);
+    } catch (error) {
+      this._showNotification(error?.message || 'Cloud command failed', 'error');
+    }
+    this.runningCommand = null;
   }
 
   render() {
@@ -47,18 +97,33 @@ class IxuiCloud extends LitElement {
       `;
     }
 
-    const status = this.cloudDetails?.status || 'Unknown';
-    const isConnected = status.toLowerCase() === 'connected';
+    const cloudEnabled = this._cloudEnabled();
+    const isConnected = this._cloudOnline();
+    const status = isConnected ? 'Online' : 'Offline';
 
     return html`
       <div class="space-y-6">
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-2xl font-bold text-slate-800">Cloud</h1>
-            <p class="text-slate-500 text-sm">Cloud connection management</p>
+            <p class="text-slate-500 text-sm">Legacy cloud status view with 5 second polling and connect or disconnect actions</p>
           </div>
-          <button @click=${this._loadCloudDetails}
-            class="px-4 py-2 text-sm bg-white border border-slate-300 rounded-lg hover:bg-slate-50 text-slate-700 transition">↻ Refresh</button>
+          <div class="flex gap-3">
+            ${cloudEnabled ? html`
+              <button
+                @click=${() => this._runCloudCommand('ixcloud-connect')}
+                class="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                ?disabled=${this.runningCommand != null}
+              >${this.runningCommand === 'ixcloud-connect' ? 'Connecting...' : 'Connect'}</button>
+              <button
+                @click=${() => this._runCloudCommand('ixcloud-disconnect')}
+                class="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                ?disabled=${this.runningCommand != null}
+              >${this.runningCommand === 'ixcloud-disconnect' ? 'Disconnecting...' : 'Disconnect'}</button>
+            ` : ''}
+            <button @click=${this._loadCloudDetails}
+              class="px-4 py-2 text-sm bg-white border border-slate-300 rounded-lg hover:bg-slate-50 text-slate-700 transition">↻ Refresh</button>
+          </div>
         </div>
 
         ${this.notification ? html`
@@ -73,8 +138,11 @@ class IxuiCloud extends LitElement {
           <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center text-slate-400">
             No cloud information available
           </div>
+        ` : !cloudEnabled ? html`
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-slate-600">
+            The cloud function is disabled.
+          </div>
         ` : html`
-          <!-- Status Card -->
           <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
               <h2 class="text-sm font-semibold text-slate-700">Connection Status</h2>
@@ -90,20 +158,16 @@ class IxuiCloud extends LitElement {
 
               <div class="divide-y divide-slate-100">
                 <div class="flex items-center justify-between py-4 px-2">
-                  <span class="text-sm font-medium text-slate-600">Cloud ID</span>
-                  <span class="text-sm font-mono text-slate-800">${this.cloudDetails.cloud_id || '—'}</span>
+                  <span class="text-sm font-medium text-slate-600">Date</span>
+                  <span class="text-sm font-mono text-slate-800">${this.cloudDetails.ixcloud_validate_date || '—'}</span>
                 </div>
                 <div class="flex items-center justify-between py-4 px-2">
-                  <span class="text-sm font-medium text-slate-600">Last Sync</span>
-                  <span class="text-sm font-mono text-slate-800">${this.cloudDetails.last_sync || '—'}</span>
+                  <span class="text-sm font-medium text-slate-600">Message</span>
+                  <span class="text-sm text-slate-800 text-right max-w-xl">${this.cloudDetails.ixcloud_validate_message || '—'}</span>
                 </div>
                 <div class="flex items-center justify-between py-4 px-2">
-                  <span class="text-sm font-medium text-slate-600">Endpoint</span>
-                  <span class="text-sm font-mono text-slate-800 break-all">${this.cloudDetails.endpoint || '—'}</span>
-                </div>
-                <div class="flex items-center justify-between py-4 px-2">
-                  <span class="text-sm font-medium text-slate-600">Registration URL</span>
-                  <span class="text-sm font-mono text-slate-800 break-all">${this.cloudDetails.registration_url || '—'}</span>
+                  <span class="text-sm font-medium text-slate-600">BeaconId</span>
+                  <span class="text-sm font-mono text-slate-800 break-all">${this.cloudDetails.ixcloud_beaconid || '—'}</span>
                 </div>
               </div>
             </div>

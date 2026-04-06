@@ -13,6 +13,8 @@ import logging
 import secrets
 import time
 
+from backend.models import Response
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,6 +36,7 @@ class AuthService:
     def __init__(self) -> None:
         # In-memory fallback session store
         self._sessions: dict[str, dict] = {}
+        self._fallback_users: dict[str, str] = dict(self._FALLBACK_USERS)
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -68,6 +71,18 @@ class AuthService:
             self._logout_db(conn, session_key)
         # Always clean up in-memory store too
         self._sessions.pop(session_key, None)
+
+    def change_password(
+        self,
+        session_key: str,
+        old_password: str,
+        new_password: str,
+    ) -> Response:
+        """Change the password for the authenticated session."""
+        conn = self._get_connection()
+        if conn is not None:
+            return self._change_password_db(conn, session_key, old_password, new_password)
+        return self._change_password_memory(session_key, old_password, new_password)
 
     # ------------------------------------------------------------------
     # DB-backed implementations
@@ -132,12 +147,45 @@ class AuthService:
         finally:
             conn.close()
 
+    def _change_password_db(
+        self,
+        conn,
+        session_key: str,
+        old_password: str,
+        new_password: str,
+    ) -> Response:
+        from backend.db import db_cursor
+
+        try:
+            with db_cursor(conn) as cur:
+                cur.execute(
+                    "SELECT users.id, users.password FROM user_sessions "
+                    "JOIN users ON users.id = user_sessions.user_id "
+                    "WHERE user_sessions.session_key = %s;",
+                    (session_key,),
+                )
+                row = cur.fetchone()
+                if row is None:
+                    return Response(success=False, error="Invalid session.")
+                if row["password"] != old_password:
+                    return Response(success=False, error="Old password do not match.")
+                cur.execute(
+                    "UPDATE users SET password = %s WHERE id = %s;",
+                    (new_password, row["id"]),
+                )
+            return Response(success=True)
+        except Exception as exc:
+            logger.error("DB change_password error: %s", exc)
+            return Response(success=False, error="Server error.")
+        finally:
+            conn.close()
+
     # ------------------------------------------------------------------
     # In-memory fallback implementations
     # ------------------------------------------------------------------
 
     def _login_memory(self, username: str, password: str) -> str | None:
-        if self._FALLBACK_USERS.get(username) == password:
+        if self._fallback_users.get(username) == password:
             session_key = secrets.token_hex(32)
             self._sessions[session_key] = {
                 "username": username,
@@ -154,6 +202,23 @@ class AuthService:
             del self._sessions[session_key]
             return False
         return True
+
+    def _change_password_memory(
+        self,
+        session_key: str,
+        old_password: str,
+        new_password: str,
+    ) -> Response:
+        session = self._sessions.get(session_key)
+        if session is None:
+            return Response(success=False, error="Invalid session.")
+
+        username = session["username"]
+        if self._fallback_users.get(username) != old_password:
+            return Response(success=False, error="Old password do not match.")
+
+        self._fallback_users[username] = new_password
+        return Response(success=True)
 
 
 # Singleton instance

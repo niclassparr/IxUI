@@ -31,10 +31,14 @@ async def lifespan(app: FastAPI):
     if db_ok:
         logger.info("Database is connected – serving live data")
     else:
-        logger.warning(
+        message = (
             "Database is NOT available – serving demo fixture data. "
-            "Set DATABASE_URL to connect to PostgreSQL."
+            "Set DATABASE_URL or run 'docker compose up -d db' to connect "
+            "to PostgreSQL."
         )
+        if config.require_database:
+            raise RuntimeError(message)
+        logger.warning(message)
     yield
 
 

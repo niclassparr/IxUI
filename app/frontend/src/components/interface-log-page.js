@@ -17,15 +17,25 @@ class IxuiInterfaceLog extends LitElement {
     this.log = '';
     this.loading = true;
     this.notification = null;
+    this._refreshInterval = null;
   }
 
   connectedCallback() {
     super.connectedCallback();
     this._loadLog();
+    this._refreshInterval = window.setInterval(() => this._loadLog(false), 5000);
   }
 
-  async _loadLog() {
-    this.loading = true;
+  disconnectedCallback() {
+    if (this._refreshInterval) {
+      window.clearInterval(this._refreshInterval);
+      this._refreshInterval = null;
+    }
+    super.disconnectedCallback();
+  }
+
+  async _loadLog(showSpinner = true) {
+    this.loading = showSpinner;
     try {
       const data = await api.getInterfaceLog(this.position);
       this.log = data?.log ?? '';
@@ -71,7 +81,7 @@ class IxuiInterfaceLog extends LitElement {
               class="px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg hover:bg-slate-50 text-slate-700 transition">← Back</button>
             <div>
               <h1 class="text-2xl font-bold text-slate-800">Interface Log ${this.position}</h1>
-              <p class="text-slate-500 text-sm">View interface output log</p>
+              <p class="text-slate-500 text-sm">View interface output log · auto-refreshes every 5s</p>
             </div>
           </div>
           <button @click=${this._loadLog}
@@ -96,7 +106,7 @@ class IxuiInterfaceLog extends LitElement {
           </div>
           <pre
             id="log-output"
-            class="p-4 text-sm font-mono text-green-400 overflow-auto whitespace-pre-wrap break-words"
+            class="p-4 text-sm font-mono text-green-400 overflow-auto whitespace-pre-wrap wrap-break-word"
             style="max-height: 600px; min-height: 300px;"
           >${this.log || 'No log data available.'}</pre>
         </div>

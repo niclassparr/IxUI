@@ -91,6 +91,29 @@ docker compose up --build -d
 
 - Python 3.12+
 - Node.js 18+
+- Docker Desktop or another Docker engine if you want to reuse the seeded local PostgreSQL instance
+
+#### Local PostgreSQL For Manual Backend/Test Runs
+
+The manual backend now defaults to the same PostgreSQL credentials as `docker compose`:
+
+- host: `127.0.0.1`
+- port: `5432`
+- database: `ixui`
+- user: `postgres`
+- password: `postgres`
+
+Using `127.0.0.1` avoids the slow `localhost` connection path some Windows + psycopg2 setups hit.
+
+To make that work from the host, start only the database service from the repository root:
+
+```bash
+docker compose up -d db
+```
+
+This seeds PostgreSQL from `app/ixui_73_260312.sql` on first start.
+
+If you want the backend or tests to fail fast instead of silently falling back to demo data, set `IXUI_REQUIRE_DATABASE=true` in your shell before starting Uvicorn or pytest.
 
 #### Backend
 
@@ -125,6 +148,10 @@ Then serve everything through the backend at `http://localhost:8000`.
 cd app
 PYTHONPATH=. python -m pytest backend/tests/ -v
 ```
+
+Without a reachable database the backend falls back to demo fixture data, so the test suite still runs.
+
+For DB-backed parity validation, start `docker compose up -d db` first and set `IXUI_REQUIRE_DATABASE=true` before running pytest.
 
 ## API Endpoints
 
@@ -165,8 +192,8 @@ PYTHONPATH=. python -m pytest backend/tests/ -v
 
 ## Default Credentials
 
-- Username: `admin`
-- Password: `admin`
+- Seeded PostgreSQL database: `admin` / `password`
+- Demo fallback mode without PostgreSQL: `admin` / `admin`
 
 ## Migration Notes
 

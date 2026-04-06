@@ -4,6 +4,7 @@ Ported from ContextManager.java - centralized config for the IxUI application.
 """
 
 import os
+import tempfile
 from dataclasses import dataclass, field
 
 
@@ -26,10 +27,50 @@ class AppConfig:
         default_factory=lambda: ["http://localhost:3000", "http://localhost:5173"]
     )
 
-    # Database – defaults match DatabaseUtils.java; override via DATABASE_URL env var.
+    # Database – defaults match the local docker-compose PostgreSQL instance.
     database_url: str = field(
         default_factory=lambda: os.environ.get(
-            "DATABASE_URL", "postgresql://postgres:@localhost:5432/ixui"
+            "DATABASE_URL", "postgresql://postgres:postgres@127.0.0.1:5432/ixui"
+        )
+    )
+    require_database: bool = field(
+        default_factory=lambda: os.environ.get(
+            "IXUI_REQUIRE_DATABASE", "false"
+        ).lower() in {"1", "true", "yes", "on"}
+    )
+
+    # Compatibility/runtime integration settings.
+    enable_system_commands: bool = field(
+        default_factory=lambda: os.environ.get(
+            "IXUI_ENABLE_SYSTEM_COMMANDS", "false"
+        ).lower() in {"1", "true", "yes", "on"}
+    )
+    enable_streamer_socket: bool = field(
+        default_factory=lambda: os.environ.get(
+            "IXUI_ENABLE_STREAMER_SOCKET", "true"
+        ).lower() in {"1", "true", "yes", "on"}
+    )
+    system_command_path: str = field(
+        default_factory=lambda: os.environ.get(
+            "IXUI_SYSTEM_COMMAND_PATH", "/usr/bin/ixuiconf"
+        )
+    )
+    streamer_socket_host: str = field(
+        default_factory=lambda: os.environ.get(
+            "IXUI_STREAMER_SOCKET_HOST", "127.0.0.1"
+        )
+    )
+    streamer_socket_port: int = field(
+        default_factory=lambda: int(os.environ.get("IXUI_STREAMER_SOCKET_PORT", "8100"))
+    )
+    streamer_socket_timeout_seconds: float = field(
+        default_factory=lambda: float(
+            os.environ.get("IXUI_STREAMER_SOCKET_TIMEOUT_SECONDS", "1.5")
+        )
+    )
+    artifact_dir: str = field(
+        default_factory=lambda: os.environ.get(
+            "IXUI_ARTIFACT_DIR", os.path.join(tempfile.gettempdir(), "ixui")
         )
     )
 

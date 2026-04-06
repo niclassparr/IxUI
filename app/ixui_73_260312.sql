@@ -752,6 +752,8 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 --
 
 COPY public.config_dsc (id, interface_pos, emm) FROM stdin;
+1	x1a	1
+2	x1b	2
 \.
 
 
@@ -791,8 +793,8 @@ COPY public.config_emm (emm, interface_pos) FROM stdin;
 COPY public.config_eqam (id, interface_pos, network_num) FROM stdin;
 1	x2a	1
 2	x2b	1
-3	x2c	1
-4	x2d	1
+3	x2c	2
+4	x2d	2
 \.
 
 
@@ -941,6 +943,8 @@ h40	name?	hls2ip	f	\N	f
 h1	CNN International	hls2ip	t	2026-02-03 16:26:35	f
 h2	Kanal 5	hls2ip	t	\N	f
 h3	SVT 1	hls2ip	t	\N	f
+x1a	DSC-x1a	dsc	t	\N	f
+x1b	DSC-x1b	dsc	f	\N	f
 x2a	MOD-x2a	mod	t	\N	f
 x2b	MOD-x2b	mod	f	\N	f
 x2c	MOD-x2c	mod	f	\N	f
@@ -1010,7 +1014,7 @@ COPY public.nv (id, name, value) FROM stdin;
 40	hls_ba_user	
 5	dvbc_attenuation	10
 38	hls_max_bitrate	10000000
-10	dvbc_net2_enable	false
+10	dvbc_net2_enable	true
 14	dvbc_net2_attenuation	0
 20	ip_startaddr	239.1.1.1:10000
 43	remux_audio_format	mp2
@@ -1039,9 +1043,10 @@ COPY public.nv (id, name, value) FROM stdin;
 --
 
 COPY public.routes (id, service_key, output_name, lcn, dsc_pos, mod_pos, mod_pos_net2, out_sid, out_ip, epg_id, hls_enable) FROM stdin;
-8	h1, 1054	CNN International	6	None	x2a	None	1054	239.100.1.2:10000	0.0.1054	f
-5	h3, 1001	SVT 1	1	None	x2a	None	1001	239.100.1.1:10000	0.0.1001	f
-7	h2, 1005	Kanal 5	5	None	x2a	None	1005	239.100.1.3:10000	0.0.1005	f
+11	u1-1101	Seeded UDP One	1	None	x2a	x2c	101	239.1.1.81:10000		f
+12	u1-1102	Seeded UDP Two HD	2	None	x2a	x2c	102	239.1.1.82:10000		f
+13	u1-1103	Seeded UDP Radio	3	None	x2b	x2d	103	239.1.1.83:10000		f
+14	wr1-2101	Seeded Webradio	4	None	x2b	x2d	104	239.1.1.61:10000		f
 \.
 
 
@@ -1050,9 +1055,10 @@ COPY public.routes (id, service_key, output_name, lcn, dsc_pos, mod_pos, mod_pos
 --
 
 COPY public.services (id, interface_pos, name, key, sid, type, lang, all_langs, scrambled, enable, istr_url, istr_video, hls_url, webradio_url, epg_id) FROM stdin;
-15	h1	CNN International	h1, 1054	1054	TV_HD	\N	\N	f	t	\N	\N	http://10.8.0.1:1999/ch54/playlist.m3u8	\N	\N
-16	h2	Kanal 5	h2, 1005	1005	TV_HD	\N	\N	f	t	\N	\N	http://10.8.0.1:1999/ch5/playlist.m3u8	\N	\N
-17	h3	SVT 1	h3, 1001	1001	TV_HD	\N	\N	f	t	\N	\N	http://10.8.0.1:1999/ch1/playlist.m3u8	\N	\N
+20	u1	Seeded UDP One	u1-1101	1101	TV_SD	eng	{eng}	f	t	\N	f	\N	\N	\N
+21	u1	Seeded UDP Two HD	u1-1102	1102	TV_HD	eng	{eng,swe}	f	t	\N	f	\N	\N	\N
+22	u1	Seeded UDP Radio	u1-1103	1103	RADIO	eng	{eng}	f	t	\N	f	\N	\N	\N
+23	wr1	Seeded Webradio	wr1-2101	2101	RADIO	eng	{eng}	f	t	https://demo.local/audio/wr1/live.mp3	f	\N	https://demo.local/audio/wr1/live.mp3	\N
 \.
 
 
@@ -1081,7 +1087,7 @@ COPY public.users (id, name, password, edit, view) FROM stdin;
 -- Name: config_dsc_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.config_dsc_id_seq', 1, false);
+SELECT pg_catalog.setval('public.config_dsc_id_seq', 2, true);
 
 
 --
@@ -1158,14 +1164,14 @@ SELECT pg_catalog.setval('public.nv_id_seq', 76, true);
 -- Name: routes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.routes_id_seq', 8, true);
+SELECT pg_catalog.setval('public.routes_id_seq', 14, true);
 
 
 --
 -- Name: services_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.services_id_seq', 17, true);
+SELECT pg_catalog.setval('public.services_id_seq', 23, true);
 
 
 --

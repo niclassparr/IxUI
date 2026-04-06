@@ -11,8 +11,13 @@ function isLoggedIn() {
 
 async function request(path, options = {}) {
   const url = `${API_BASE}${path}`;
+  const headers = { ...(options.headers || {}) };
+  const isFormData = options.body instanceof FormData;
+  if (!isFormData && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
   const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+    headers,
     ...options,
   });
   if (res.status === 204) return null;
@@ -21,6 +26,17 @@ async function request(path, options = {}) {
     throw new Error(text || `Request failed: ${res.status}`);
   }
   return res.json();
+}
+
+function buildApiUrl(path, includeSession = false) {
+  const url = new URL(`${API_BASE}${path}`, window.location.origin);
+  if (includeSession) {
+    const key = getSessionKey();
+    if (key) {
+      url.searchParams.set('session_key', key);
+    }
+  }
+  return url.toString();
 }
 
 async function login(username, password) {
@@ -60,6 +76,10 @@ function getInterfaces() {
   return request('/interfaces/');
 }
 
+function getInterfaceTypes() {
+  return request('/interfaces/types/all');
+}
+
 function getInterface(pos) {
   return request(`/interfaces/${pos}`);
 }
@@ -70,6 +90,17 @@ function getInterfaceConfig(pos, type) {
 
 function setInterfaceConfig(pos, type, config) {
   return request(`/interfaces/${pos}/config/${type}`, {
+    method: 'PUT',
+    body: JSON.stringify(config),
+  });
+}
+
+function getInterfaceInfoch(pos) {
+  return request(`/interfaces/${pos}/infoch`);
+}
+
+function setInterfaceInfoch(pos, config) {
+  return request(`/interfaces/${pos}/infoch`, {
     method: 'PUT',
     body: JSON.stringify(config),
   });
@@ -88,6 +119,38 @@ function saveServices(pos, services) {
 
 function startScan(pos) {
   return request(`/interfaces/${pos}/scan`, { method: 'POST' });
+}
+
+function getInterfaceScanTime(pos) {
+  return request(`/interfaces/${pos}/scan-time`);
+}
+
+function getInterfaceScanResult(pos) {
+  return request(`/interfaces/${pos}/scan-result`);
+}
+
+function applyInterface(pos, interfaceType) {
+  return request(`/interfaces/${pos}/apply`, {
+    method: 'POST',
+    body: JSON.stringify({ interface_type: interfaceType }),
+  });
+}
+
+function runInterfaceCommand(pos, command) {
+  return request(`/interfaces/${pos}/command`, {
+    method: 'POST',
+    body: JSON.stringify({ command }),
+  });
+}
+
+function getCurrentEmmList(pos, isDsc = false) {
+  return request(`/interfaces/${pos}/emm?is_dsc=${encodeURIComponent(String(isDsc))}`);
+}
+
+function updateInterfaceMultibandType(pos, interfaceType) {
+  return request(`/interfaces/${pos}/multiband/${encodeURIComponent(interfaceType)}`, {
+    method: 'PUT',
+  });
 }
 
 function getInterfaceStatus(pos) {
@@ -130,6 +193,53 @@ function updateSettings(settings) {
   });
 }
 
+function getDateTimeSettings() {
+  return request('/settings/datetime');
+}
+
+function updateDateTimeSettings(payload) {
+  return request('/settings/datetime', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+function getModulators() {
+  return request('/settings/modulators');
+}
+
+function updateModulators(modulators) {
+  return request('/settings/modulators', {
+    method: 'PUT',
+    body: JSON.stringify(modulators),
+  });
+}
+
+function changePassword(oldPassword, newPassword) {
+  return request('/settings/password', {
+    method: 'POST',
+    body: JSON.stringify({
+      session_key: getSessionKey(),
+      old_password: oldPassword,
+      new_password: newPassword,
+    }),
+  });
+}
+
+function getNetworkSettings() {
+  return request('/settings/network');
+}
+
+function updateNetworkSettings(settings, applyChanges = true) {
+  return request('/settings/network', {
+    method: 'PUT',
+    body: JSON.stringify({
+      settings,
+      apply_changes: applyChanges,
+    }),
+  });
+}
+
 function getNetworkStatus() {
   return request('/settings/network-status');
 }
@@ -150,6 +260,43 @@ function runCommand(command) {
   });
 }
 
+function getConfigStatus() {
+  return request(`/system/config-status?session_key=${encodeURIComponent(getSessionKey() || '')}`);
+}
+
+function pushConfig() {
+  return request(`/system/push-config?session_key=${encodeURIComponent(getSessionKey() || '')}`, {
+    method: 'POST',
+  });
+}
+
+function downloadBackup() {
+  window.open(buildApiUrl('/system/backup/download', true), '_self');
+}
+
+async function uploadBackup(file) {
+  const body = new FormData();
+  body.append('file', file);
+  return request(`/system/backup/upload?session_key=${encodeURIComponent(getSessionKey() || '')}`, {
+    method: 'POST',
+    body,
+  });
+}
+
+function getStagedBackupInfo() {
+  return request(`/system/backup/staged-info?session_key=${encodeURIComponent(getSessionKey() || '')}`);
+}
+
+function restoreBackup() {
+  return request(`/system/backup/restore?session_key=${encodeURIComponent(getSessionKey() || '')}`, {
+    method: 'POST',
+  });
+}
+
+function downloadDocumentPdf() {
+  window.open(buildApiUrl('/system/document/pdf', true), '_self');
+}
+
 function getJsonInfo() {
   return request('/system/json-info');
 }
@@ -168,6 +315,12 @@ function getCloudDetails() {
 
 function getUpdatePackages() {
   return request('/system/update-packages');
+}
+
+function checkUpdatePackages() {
+  return request('/system/update/check', {
+    method: 'POST',
+  });
 }
 
 function installUpdatePackages(packages) {
@@ -192,8 +345,29 @@ function saveForcedContents(contents) {
   });
 }
 
+function getEnabledForcedContents() {
+  return request('/system/forced-contents/enabled');
+}
+
+function saveForcedContentOverrideStatus(id, overrideIndex) {
+  return request(`/system/forced-contents/${id}/override`, {
+    method: 'POST',
+    body: JSON.stringify({ override_index: overrideIndex }),
+  });
+}
+
 function getHlsInterfaces() {
   return request('/interfaces/hls/list');
+}
+
+function getHlsWizardState() {
+  return request('/interfaces/hls/wizard');
+}
+
+function scanHlsWizard() {
+  return request('/interfaces/hls/scan', {
+    method: 'POST',
+  });
 }
 
 function saveHlsWizardServices(services) {
@@ -214,12 +388,21 @@ export {
   getSessionKey,
   isLoggedIn,
   getInterfaces,
+  getInterfaceTypes,
   getInterface,
   getInterfaceConfig,
   setInterfaceConfig,
+  getInterfaceInfoch,
+  setInterfaceInfoch,
   getServices,
   saveServices,
   startScan,
+  getInterfaceScanTime,
+  getInterfaceScanResult,
+  applyInterface,
+  runInterfaceCommand,
+  getCurrentEmmList,
+  updateInterfaceMultibandType,
   getInterfaceStatus,
   getStreamerStatus,
   getTunerStatus,
@@ -228,20 +411,39 @@ export {
   getBitrates,
   getSettings,
   updateSettings,
+  getDateTimeSettings,
+  updateDateTimeSettings,
+  getModulators,
+  updateModulators,
+  changePassword,
+  getNetworkSettings,
+  updateNetworkSettings,
   getNetworkStatus,
   getNetworkStatus2,
   getUnitInfo,
   runCommand,
+  getConfigStatus,
+  pushConfig,
+  downloadBackup,
+  uploadBackup,
+  getStagedBackupInfo,
+  restoreBackup,
+  downloadDocumentPdf,
   getJsonInfo,
   getFeature,
   getInterfaceLog,
   getCloudDetails,
   getUpdatePackages,
+  checkUpdatePackages,
   installUpdatePackages,
   getUpdateResult,
   getForcedContents,
   saveForcedContents,
+  getEnabledForcedContents,
+  saveForcedContentOverrideStatus,
   getHlsInterfaces,
+  getHlsWizardState,
+  scanHlsWizard,
   saveHlsWizardServices,
   getMedia,
 };
